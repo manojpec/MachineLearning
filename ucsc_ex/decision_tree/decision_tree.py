@@ -1,7 +1,8 @@
 from digits_pca import get_training_prinicipal_features_and_labels, get_test_prinicipal_features_and_labels
-from utils_stump import build_tree, evaluate_tree, plot_contours
+from utils_stump import build_tree, evaluate_tree, plot_contours, plot_roc
 from commons import traverse_tree, log_debug, log
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import roc_curve
 from config import *
 import numpy as np
 
@@ -28,11 +29,15 @@ def main_task():
     test_x_nd = np.column_stack((test_xi, test_labels))
     test_target_actual = [0] * np.alen(test_x_nd)
     test_target_predicted = [0] * np.alen(test_x_nd)
+    test_target_score = [0] * np.alen(test_x_nd)
     for idx in range(0, np.alen(test_x_nd)):
         test_target_actual[idx] = test_x_nd[idx][NUM_FEATURES]
-        test_target_predicted[idx] = evaluate_tree((test_x_nd[idx][:NUM_FEATURES]), root_node)
+        test_target_predicted[idx], test_target_score[idx] = evaluate_tree((test_x_nd[idx][:NUM_FEATURES]), root_node)
+
+    fpr, tpr, thresholds = roc_curve(test_target_actual, test_target_score, pos_label=1)
 
     plot_contours(test_x_nd, test_target_actual, root_node)
+    plot_roc(fpr, tpr, thresholds)
     cm = confusion_matrix(test_target_actual, test_target_predicted)
     log("Accuracy: ", (cm[0][0] + cm[1][1]) / (np.sum(cm)))
 

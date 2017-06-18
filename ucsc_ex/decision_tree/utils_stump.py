@@ -4,6 +4,7 @@ import numpy.linalg as lalg
 from commons import DNode, log_debug, log
 from config import *
 import matplotlib.pyplot as plt
+from sklearn.metrics import auc
 
 
 def get_feature_impurity_and_tau(x, t):
@@ -94,9 +95,10 @@ def get_prevalence(target):
 
 def get_leaf_node_by_prevalence(prevalence_negative, prevalence_positive):
     if prevalence_negative > prevalence_positive:
-        return DNode("LEAF", target=NEGATIVE_CLASS_MAPPED)
+        # score is always given for positive class
+        return DNode("LEAF", target=NEGATIVE_CLASS_MAPPED, score=prevalence_positive)
     else:
-        return DNode("LEAF", target=POSITIVE_CLASS_MAPPED)
+        return DNode("LEAF", target=POSITIVE_CLASS_MAPPED, score=prevalence_positive)
 
 
 def get_leaf_node(target):
@@ -116,7 +118,7 @@ def build_tree_recursive(x_t_all, level=0):
     prevalence = prevalence_negative * prevalence_positive
 
     log_debug("Tree max height so far: ", globals.tree_height)
-    log("X very pure? : subset len: {}, prevalence: {}", x_t_len, prevalence)
+    log_debug("X very pure? : subset len: {}, prevalence: {}", x_t_len, prevalence)
     if prevalence < LIMIT_LEAF_NODE_PREVALENCE or x_t_len < LIMIT_LEAF_NODE_SUBSET_SIZE:
         log_debug("X very pure. Bailing out: subset len: {}, prevalence: {}", x_t_len, prevalence)
         return get_leaf_node_by_prevalence(prevalence_negative, prevalence_positive)
@@ -156,24 +158,28 @@ def build_tree(x_t_all):
     return build_tree_recursive(x_t_all)
 
 
-def evaluate_tree(xi, root_node):
+def evaluate_tree(xi, node):
 
-    if root_node.is_leaf():
-        return root_node.target
+    if node.is_leaf():
+        return node.target, node.score
 
-    decision_feature_idx = root_node.feature_index
-    decision_feature_tau = root_node.tau
+    decision_feature_idx = node.feature_index
+    decision_feature_tau = node.tau
     if xi[decision_feature_idx] < decision_feature_tau:
-        return evaluate_tree(xi, root_node.left)
+        return evaluate_tree(xi, node.left)
     else:
-        return evaluate_tree(xi, root_node.right)
+        return evaluate_tree(xi, node.right)
 
 
 def plot_contours(x_nd, y, root_node):
     import matplotlib.pyplot as plt
     import numpy as np
 
-    X = x_nd[:, [0, 1]]
+    if NUM_FEATURES > 2:
+        log("Decision Tree plotting supported only for 2 features!")
+        return
+
+    X = x_nd[:, :NUM_FEATURES]
 
     fig = plt.figure()
     cols = np.zeros((np.alen(y), 4))
@@ -196,7 +202,7 @@ def plot_contours(x_nd, y, root_node):
     z = np.zeros(shape=xx.shape)
     for row in range(0, xx.shape[0]):
         for col in range(0, xx.shape[1]):
-            z[row][col] = evaluate_tree((xx[row][col], yy[row][col]), root_node)
+            z[row][col], score = evaluate_tree((xx[row][col], yy[row][col]), root_node)
 
     z = z.reshape(xx.shape)
     cs = ax.contourf(yy, xx, z, alpha=DECISION_BOUNDARY_ALPHA, cmap=plt.cm.Paired)
@@ -220,7 +226,22 @@ def plot_contours(x_nd, y, root_node):
     plt.show()
 
 
-
+def plot_roc(fpr, tpr, thresholds):
+    roc_auc = auc(fpr, tpr)
+    plt.figure()
+    plt.rcParams['axes.facecolor'] = 'w'
+    plt.plot(fpr, tpr,
+             color='darkorange',
+             lw=2, linestyle='-.',
+             label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='blue', lw=1, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.02])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+    plt.show()
 
 
 

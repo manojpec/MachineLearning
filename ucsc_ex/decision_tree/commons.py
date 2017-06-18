@@ -14,6 +14,7 @@ class DNode:
         else:
             self.type = "LEAF"
             self.target = kwargs['target']
+            self.score = kwargs['score']
 
     def is_leaf(self):
         return self.type == "LEAF"

@@ -228,7 +228,7 @@ def get_pca_xi(xi, mu, zz):
 
 def get_pca(data_type):
     images, l_labels = load_mnist(data_type, digits=[NEGATIVE_CLASS, POSITIVE_CLASS])
-    images, l_labels = load_traffic(data_type, targets=[NEGATIVE_CLASS, POSITIVE_CLASS])
+    # images, l_labels = load_traffic(data_type, targets=[NEGATIVE_CLASS, POSITIVE_CLASS])
 
     x = get_x_feature_vectors(images)
     mu = get_mu_mean_vectors(x)
