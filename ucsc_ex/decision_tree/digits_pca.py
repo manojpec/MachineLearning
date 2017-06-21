@@ -2,7 +2,6 @@
 
 from config import *
 from commons import log_debug
-from load_traffic_data import load_traffic
 
 import csv
 import struct
@@ -18,7 +17,7 @@ np.set_printoptions(precision=5)
 np.set_printoptions(suppress=True)
 
 
-def load_mnist(dataset="training", digits=range(10), path='data/3/'):
+def load_mnist(dataset="training", digits=range(10), path='decision_tree/data/mnist_digits/'):
     """
     Adapted from: http://cvxopt.org/applications/svm/index.html?highlight=mnist
     """
